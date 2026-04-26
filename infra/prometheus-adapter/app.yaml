@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus-adapter
+  namespace: argocd
+spec:
+  project: default
+  destination:
+    namespace: monitoring
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: prometheus-adapter
+    targetRevision: 4.10.0
+    helm:
+      values: |
+        prometheus:
+          url: http://kube-prom-stack-kube-prometheus-prometheus.monitoring.svc
+          port: 9090
+        rules:
+          custom:
+            # Exposes per-pod RPS as "http_requests_per_second" for HPA consumption
+            - seriesQuery: 'http_requests_total{namespace="paysense"}'
+              resources:
+                overrides:
+                  namespace: { resource: namespace }
+                  pod:       { resource: pod }
+              name:
+                matches: "^(.*)_total$"
+                as: "${1}_per_second"
+              metricsQuery: 'rate(<<.Series>>{<<.LabelMatchers>>}[2m])'
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true]

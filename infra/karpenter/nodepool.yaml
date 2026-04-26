@@ -14,7 +14,7 @@ spec:
           values: ["2", "4", "8"]
         - key: karpenter.sh/capacity-type
           operator: In
-          values: ["spot", "on-demand"]
+          values: ["on-demand"]
       nodeClassRef:
         group: karpenter.k8s.aws
         kind: EC2NodeClass
